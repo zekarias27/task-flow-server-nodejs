@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 
 // Routes
 const tasksRouter = require('./routes/tasks');
-const authRouter = require('./routes/auth'); // Adjust the path if needed
+const authRouter = require('./routes/auth');
 
 app.use('/users', tasksRouter);
 app.use('/auth', authRouter);
