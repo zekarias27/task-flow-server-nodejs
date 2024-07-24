@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const userSchema = new mongoose.Schema({
   name: { type: String, required: false },
   email: { type: String, required: false, unique: true },
-  createdAt: { type: Date, default: Date.now },
+  createdAt: { type: Date},
   tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }]
 });
 
@@ -18,8 +18,8 @@ const taskSchema = new mongoose.Schema({
   delegate: { type: Boolean, default: false },
   important: { type: Boolean, default: false },
   completed: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  createdAt: { type: Date},
+  updatedAt: { type: Date}
 });
 
 const User = mongoose.model('User', userSchema);
