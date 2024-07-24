@@ -1,10 +1,10 @@
 const express = require('express');
 const { User, Task } = require('../mongodb/model'); 
 const router = express.Router();
-const moment = require('moment');
+const moment = require('moment-timezone');
 const { v4: uuidv4 } = require('uuid');
 
-
+// Get tasks for a user
 router.get('/:userId/tasks', async (req, res) => {
   const userId = req.params.userId;
   console.log('userId received in GET /:userId/tasks:', userId);
@@ -43,8 +43,8 @@ router.post('/:userId/tasks', async (req, res) => {
       delegate,
       important,
       completed: false,
-      createdAt: moment().toDate(),
-      updatedAt: moment().toDate()
+      createdAt: moment().tz('America/Los_Angeles').toDate(),
+      updatedAt: moment().tz('America/Los_Angeles').toDate()
     });
 
     await newTask.save();
@@ -59,11 +59,11 @@ router.post('/:userId/tasks', async (req, res) => {
   }
 });
 
-
+// Update a task
 router.patch('/:userId/tasks/:taskId', async (req, res) => {
   const userId = req.params.userId;
   const taskId = req.params.taskId;
-  console.log('userId received in PATCH /:userId/tasks/:taskId:', userId); 
+  console.log('userId received in PATCH /:userId/tasks/:taskId:', userId);
   const updatedTaskData = req.body;
 
   try {
@@ -77,7 +77,7 @@ router.patch('/:userId/tasks/:taskId', async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    Object.assign(task, updatedTaskData, { updatedAt: moment().toDate() });
+    Object.assign(task, updatedTaskData, { updatedAt: moment().tz('America/Los_Angeles').toDate() });
     await task.save();
 
     res.json(task);
@@ -87,11 +87,11 @@ router.patch('/:userId/tasks/:taskId', async (req, res) => {
   }
 });
 
-
+// Mark task as complete
 router.patch('/:userId/tasks/:taskId/complete', async (req, res) => {
   const userId = req.params.userId;
   const taskId = req.params.taskId;
-  console.log('userId received in PATCH /:userId/tasks/:taskId/complete:', userId); // Log userId
+  console.log('userId received in PATCH /:userId/tasks/:taskId/complete:', userId);
 
   try {
     const user = await User.findOne({ email: userId });
@@ -105,7 +105,7 @@ router.patch('/:userId/tasks/:taskId/complete', async (req, res) => {
     }
 
     task.completed = true;
-    task.updatedAt = moment().toDate();
+    task.updatedAt = moment().tz('America/Los_Angeles').toDate();
     await task.save();
 
     res.json(task);
@@ -115,11 +115,11 @@ router.patch('/:userId/tasks/:taskId/complete', async (req, res) => {
   }
 });
 
-
+// Delete a task
 router.delete('/:userId/tasks/:taskId', async (req, res) => {
   const userId = req.params.userId;
   const taskId = req.params.taskId;
-  console.log('userId received in DELETE /:userId/tasks/:taskId:', userId); // Log userId
+  console.log('userId received in DELETE /:userId/tasks/:taskId:', userId);
 
   try {
     const user = await User.findOne({ email: userId });
@@ -132,11 +132,9 @@ router.delete('/:userId/tasks/:taskId', async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Remove the task from the user's tasks array
     user.tasks.pull(task._id);
     await user.save();
 
-    // Delete the task from the Task collection
     await Task.deleteOne({ id: taskId });
 
     res.json({ message: 'Task deleted successfully' });
@@ -146,17 +144,23 @@ router.delete('/:userId/tasks/:taskId', async (req, res) => {
   }
 });
 
-
+// Get completed tasks for a specific date
 router.get('/:userId/tasks/completed/:date', async (req, res) => {
   const userId = req.params.userId;
   const date = req.params.date;
-  console.log('userId received in GET /:userId/tasks/completed/:date:', userId); // Log userId
-  console.log('date received in GET /:userId/tasks/completed/:date:', date); // Log date
+  console.log('userId received in GET /:userId/tasks/completed/:date:', userId);
+  console.log('date received in GET /:userId/tasks/completed/:date:', date);
 
   try {
     const user = await User.findOne({ email: userId }).populate({
       path: 'tasks',
-      match: { completed: true, updatedAt: { $gte: moment(date).startOf('day').toDate(), $lt: moment(date).endOf('day').toDate() } }
+      match: {
+        completed: true,
+        updatedAt: {
+          $gte: moment(date).tz('America/Los_Angeles').startOf('day').toDate(),
+          $lt: moment(date).tz('America/Los_Angeles').endOf('day').toDate()
+        }
+      }
     });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
